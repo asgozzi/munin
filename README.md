@@ -1,1 +1,1 @@
-# munin
+Miscellaneous plugins for Munin
