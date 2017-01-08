@@ -1,0 +1,117 @@
+#!/bin/bash
+#
+# Copyright (C) 2016 Andrea Gozzi
+#
+# Plugin to read fan speeds and drive temperatures from Areca RAID controller.
+# Needs "linuxcli" (i386 or x86_64) utility from Areca (http://www.areca.com.tw/support/s_linux/linux.htm).
+#
+# Configuration options:
+#
+# [areca_*]
+#    user root
+#    env.arecabinpath /usr/local/bin/areca_cli
+#
+# Parameters supported:
+#
+#       config
+#       autoconf
+#
+# Magic markers:
+#%# family=auto
+#%# capabilities=autoconf
+
+
+if [ "$1" = "autoconf" ]; then
+        if [ ! -f "$arecabinpath" ]; then
+                echo "$0: error: areca linuxcli path not set"
+                exit 1
+        else
+                echo yes
+                exit 0
+        fi
+fi
+
+MOPTION=$(basename "$0" | cut -d '_' -f 2)
+
+if [ "$MOPTION" = "" ]; then
+        echo "$0: error: invalid monitoring parameter"
+        exit 1
+fi;
+
+if [ "$1" = "config" ]; then
+        if [ "$MOPTION" = "fan" ]
+        then
+                echo 'graph_title Areca fans speeds'
+                echo 'graph_category sensors'
+                echo 'graph_info This graph shows the fans speed on Areca RAID controller.'
+                echo 'graph_vlabel rpm'
+				
+				LCOUNT=0
+				for i in $($arecabinpath hw info | grep "Fan"); do
+						((LCOUNT+=1))
+						if (( $LCOUNT % 5 == 0 ))
+						then
+								if [ ! $i = "0" ]; then
+										echo "fan"$(( ($LCOUNT / 5) ))"_rpm.label" "Fan" "#"$(( ($LCOUNT / 5) ))
+								fi
+						fi
+				done
+                
+				exit 0
+        elif [ "$MOPTION" = "temp" ]
+        then
+                echo 'graph_title Areca drives temperatures'
+                echo 'graph_category sensors'
+                echo 'graph_info This graph shows the temperatures of drives attached to an Areca RAID controller.'
+                echo 'graph_vlabel Degrees celsius'
+				
+				LCOUNT=0
+				for i in $($arecabinpath hw info | grep "HDD"); do
+						((LCOUNT+=1))
+						if (( $LCOUNT % 5 == 0 ))
+						then
+								if [ ! $i = "0" ]; then
+										echo "hdd"$(( ($LCOUNT / 5) ))"_temp.label" "Drive" "#"$(( ($LCOUNT / 5) ))
+										echo "hdd"$(( ($LCOUNT / 5) ))"_temp.max 100";
+										echo "hdd"$(( ($LCOUNT / 5) ))"_temp.warning 57";
+										echo "hdd"$(( ($LCOUNT / 5) ))"_temp.critical 60";
+								fi
+						fi
+				done
+                
+				exit 0
+        else
+                echo "$0: error: invalid monitoring parameter"
+                exit 1
+        fi
+fi;
+
+if [ "$MOPTION" = "temp" ]
+then
+        LCOUNT=0
+        for i in $($arecabinpath hw info | grep "HDD"); do
+                ((LCOUNT+=1))
+                if (( $LCOUNT % 5 == 0 ))
+                then
+                        if [ ! $i = "0" ]; then
+                                echo "hdd"$(( ($LCOUNT / 5) ))"_temp.value" $i
+                        fi
+                fi
+        done
+fi;
+
+if [ "$MOPTION" = "fan" ]
+then
+        LCOUNT=0
+        for i in $($arecabinpath hw info | grep "Fan"); do
+                ((LCOUNT+=1))
+                if (( $LCOUNT % 5 == 0 ))
+                then
+                        if [ ! $i = "0" ]; then
+                                echo "fan"$(( ($LCOUNT / 5) ))"_rpm.value" $i
+                        fi
+                fi
+        done
+fi;
+
+exit 0
