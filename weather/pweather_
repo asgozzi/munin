@@ -1,0 +1,107 @@
+#!/bin/bash
+#
+#
+# Copyright (C) 2012 Andrea Gozzi
+#
+# Plugin to read data from pywws-enabled weather station.
+#
+# Configuration options:
+#
+# [pweather_*]
+#    user root
+#    env.pywwsfile /data/nfs/pwwys/munin.txt
+#
+# Parameters supported:
+#
+#       config
+#       autoconf
+#
+# Magic markers:
+#%# family=auto
+#%# capabilities=autoconf
+
+if [ "$1" = "autoconf" ]; then
+        if [ ! -f "$pywwsfile" ]
+	then
+                echo "$0: error: pywws live file not found"
+                exit 1
+        else
+                echo yes
+                exit 0
+        fi
+fi
+
+
+GTYPE=$(basename "$0" | cut -d '_' -f 2)
+
+if [ "$GTYPE" = "" ]; then
+        echo "$0: error: invalid monitoring parameter"
+        exit 1
+fi;
+
+if [ "$1" = "config" ]; then
+        if [ "$GTYPE" = "pres" ]
+        then
+                echo 'graph_title Atmospheric pressure'
+                echo 'graph_category weather'
+		echo 'graph_args --base 1000 --lower-limit 1000 --upper-limit 1100'
+                echo 'graph_info This graph shows atmospheric pressure reported by the weather station.'
+                echo 'graph_vlabel hPa'
+		echo 'CurPres.label Pressure'
+		exit 0
+        elif [ "$GTYPE" = "hum" ]
+        then
+                echo 'graph_title Humidity'
+                echo 'graph_category weather'
+		echo 'graph_args --base 1000 --lower-limit 0 --upper-limit 100'
+                echo 'graph_info This graph shows the inside and outsite humidity % reported by the weather station.'
+                echo 'graph_vlabel %'
+		echo 'CurHumIn.label Inside Humidity'
+		echo 'CurHumOut.label Outside Humidity'
+		exit 0
+        elif [ "$GTYPE" = "temp" ]
+        then
+		echo 'graph_title Temperature'
+		echo 'graph_category weather'
+		echo 'graph_args --base 1000 --lower-limit -15 --upper-limit 45'
+		echo 'graph_info This graph shows the inside and outsite temperatures reported by the weather station.'
+		echo 'graph_vlabel temperature in celsius'
+		echo 'CurTempIn.label Inside Temperature'
+		echo 'CurTempOut.label Outside Temperature'
+		exit 0
+        else
+                echo "$0: error: invalid monitoring parameter"
+                exit 1
+        fi
+fi;
+
+
+if [ -f "$pywwsfile" ]
+then
+        if [ "$GTYPE" = "pres" ]
+        then
+		getpres=$(grep CurPres "$pywwsfile")
+		echo $getpres
+        elif [ "$GTYPE" = "hum" ]
+        then
+		gethumin=$(grep CurHumIn "$pywwsfile")
+		gethumout=$(grep CurHumOut "$pywwsfile")
+		echo $gethumin
+		echo $gethumout
+        elif [ "$GTYPE" = "temp" ]
+        then
+		gettempin=$(grep CurTempIn "$pywwsfile")
+		gettempout=$(grep CurTempOut "$pywwsfile")
+		echo $gettempin
+		echo $gettempout
+        else
+                echo "$0: error: invalid monitoring parameter"
+                exit 1
+        fi
+
+else
+	echo "$0: error: pywws live file not found"
+	exit 1
+fi
+
+exit 0

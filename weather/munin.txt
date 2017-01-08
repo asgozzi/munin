@@ -1,0 +1,10 @@
+#live#
+CurTempOut.value #temp_out#
+
+CurTempIn.value #temp_in#
+
+CurHumOut.value #hum_out#
+
+CurHumIn.value #hum_in#
+
+CurPres.value #rel_pressure#
