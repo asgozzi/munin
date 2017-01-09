@@ -5,7 +5,7 @@ Plugin to monitor data reported from a pywws-compatible weather station.
 
 ##Examples
 
-![pweather_temp](http://www.vp44.net/storage/images/github/munin/weather_temp-month.png)
+![pweather_temp](http://www.vp44.net/storage/images/github/munin/weather_temp-day.png)
 
 ![pweather_hum](http://www.vp44.net/storage/images/github/munin/weather_hum-month.png)
 
