@@ -1,0 +1,73 @@
+#!/bin/bash
+#
+#
+# Copyright (C) 2011 Andrea Gozzi
+#
+# Plugin to get the size of messages currently in postfix's queues (active, hold, deferred).
+#
+# Configuration options:
+#
+# [postfix_*]
+#    user root
+#
+# Parameters supported:
+#
+#       config
+#       autoconf
+#
+# Magic markers:
+#%# family=auto
+#%# capabilities=autoconf
+
+if [ "$1" = "autoconf" ]; then
+        if ! mailq >/dev/null 2>/dev/null
+	then
+                echo "$0: error: mailq not found"
+                exit 1
+        else
+                echo yes
+                exit 0
+        fi
+fi;
+
+if [ "$1" = "config" ]; then
+	echo 'graph_title Postfix queue size'
+	echo 'graph_category postfix'
+	echo 'graph_info This graph shows the size of different postfix queues.'
+	echo 'graph_vlabel bytes'
+	echo 'holdQueue.label hold'
+	echo 'activeQueue.label active'
+	echo 'deferredQueue.label deferred'
+	exit 0
+fi;
+
+if mailq >/dev/null 2>/dev/null
+then
+	holdVol=0
+	while read -r mqLine ; do
+        	holdVol=$(($holdVol+$mqLine))
+	done < <(mailq | grep "!" | awk "{ print \$2 }")
+
+        activeVol=0
+        while read -r mqLine ; do
+                activeVol=$(($activeVol+$mqLine))
+        done < <(mailq | grep "*" | awk "{ print \$2 }")
+
+	deferredVol=0
+	while read -r mqLine ; do
+        	re='^[0-9]+$'
+        	if [[ $mqLine =~ $re ]]
+        	then
+                	deferredVol=$(($deferredVol+$mqLine))
+        	fi
+	done < <(mailq | grep -v -E '!|\*' | awk "{ print \$2 }")
+
+	echo "holdQueue.value" $holdVol
+	echo "activeQueue.value" $activeVol
+	echo "deferredQueue.value" $deferredVol
+else
+	echo "$0: error: mailq not found"
+	exit 1
+fi;
+
+exit 0
